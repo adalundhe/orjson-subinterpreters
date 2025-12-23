@@ -92,7 +92,7 @@ pub(crate) unsafe extern "C" fn orjson_fragment_tp_new(
                 ob_refcnt: 1,
                 #[cfg(PyPy)]
                 ob_pypy_link: 0,
-                ob_type: crate::typeref::FRAGMENT_TYPE,
+                ob_type: crate::typeref::get_fragment_type(),
                 contents: contents,
             });
             Box::into_raw(obj).cast::<PyObject>()

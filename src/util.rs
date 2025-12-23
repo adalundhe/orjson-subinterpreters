@@ -24,7 +24,7 @@ macro_rules! ob_type {
 }
 
 macro_rules! is_class_by_type {
-    ($ob_type:expr, $type_ptr:ident) => {
+    ($ob_type:expr, $type_ptr:expr) => {
         unsafe { $ob_type == $type_ptr }
     };
 }
@@ -54,7 +54,7 @@ macro_rules! is_subclass_by_flag {
 }
 
 macro_rules! is_subclass_by_type {
-    ($ob_type:expr, $type:ident) => {
+    ($ob_type:expr, $type:expr) => {
         unsafe {
             (*($ob_type.cast::<crate::ffi::PyTypeObject>()))
                 .ob_base

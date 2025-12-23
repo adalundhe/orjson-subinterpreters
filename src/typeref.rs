@@ -99,10 +99,224 @@ unsafe fn look_up_datetime() {
     }
 }
 
-static INIT: OnceLock<bool> = OnceLock::new();
-
+// Legacy initialization - now handled by interpreter_state
+// Kept for compatibility during transition
 pub(crate) fn init_typerefs() {
-    INIT.get_or_init(_init_typerefs_impl);
+    // No-op - initialization now happens per-interpreter in interpreter_state
+}
+
+// Accessor macros that use interpreter state instead of static variables
+// These provide a drop-in replacement for the old static variables
+
+#[macro_export]
+macro_rules! get_state {
+    () => {
+        unsafe { crate::interpreter_state::get_current_state().as_ref().unwrap() }
+    };
+}
+
+// Accessor functions for commonly used values
+#[inline(always)]
+pub(crate) fn get_default() -> *mut PyObject {
+    unsafe { get_state!().default }
+}
+
+#[inline(always)]
+pub(crate) fn get_option() -> *mut PyObject {
+    unsafe { get_state!().option }
+}
+
+#[inline(always)]
+pub(crate) fn get_none() -> *mut PyObject {
+    unsafe { get_state!().none }
+}
+
+#[inline(always)]
+pub(crate) fn get_true() -> *mut PyObject {
+    unsafe { get_state!().true_ }
+}
+
+#[inline(always)]
+pub(crate) fn get_false() -> *mut PyObject {
+    unsafe { get_state!().false_ }
+}
+
+#[inline(always)]
+pub(crate) fn get_empty_unicode() -> *mut PyObject {
+    unsafe { get_state!().empty_unicode }
+}
+
+#[inline(always)]
+pub(crate) fn get_int_type() -> *mut PyTypeObject {
+    unsafe { get_state!().int_type }
+}
+
+#[inline(always)]
+pub(crate) fn get_none_type() -> *mut PyTypeObject {
+    unsafe { get_state!().none_type }
+}
+
+#[inline(always)]
+pub(crate) fn get_fragment_type() -> *mut PyTypeObject {
+    unsafe { get_state!().fragment_type }
+}
+
+#[inline(always)]
+pub(crate) fn get_json_encode_error() -> *mut PyObject {
+    unsafe { get_state!().json_encode_error }
+}
+
+#[inline(always)]
+pub(crate) fn get_json_decode_error() -> *mut PyObject {
+    unsafe { get_state!().json_decode_error }
+}
+
+// Additional accessors for string constants
+#[inline(always)]
+pub(crate) fn get_value_str() -> *mut PyObject {
+    unsafe { get_state!().value_str }
+}
+
+#[inline(always)]
+pub(crate) fn get_int_attr_str() -> *mut PyObject {
+    unsafe { get_state!().int_attr_str }
+}
+
+// Type accessors
+#[inline(always)]
+pub(crate) fn get_bytes_type() -> *mut PyTypeObject {
+    unsafe { get_state!().bytes_type }
+}
+
+#[inline(always)]
+pub(crate) fn get_str_type() -> *mut PyTypeObject {
+    unsafe { get_state!().str_type }
+}
+
+#[inline(always)]
+pub(crate) fn get_bool_type() -> *mut PyTypeObject {
+    unsafe { get_state!().bool_type }
+}
+
+#[inline(always)]
+pub(crate) fn get_list_type() -> *mut PyTypeObject {
+    unsafe { get_state!().list_type }
+}
+
+#[inline(always)]
+pub(crate) fn get_dict_type() -> *mut PyTypeObject {
+    unsafe { get_state!().dict_type }
+}
+
+#[inline(always)]
+pub(crate) fn get_tuple_type() -> *mut PyTypeObject {
+    unsafe { get_state!().tuple_type }
+}
+
+#[inline(always)]
+pub(crate) fn get_datetime_type() -> *mut PyTypeObject {
+    unsafe { get_state!().datetime_type }
+}
+
+#[inline(always)]
+pub(crate) fn get_date_type() -> *mut PyTypeObject {
+    unsafe { get_state!().date_type }
+}
+
+#[inline(always)]
+pub(crate) fn get_time_type() -> *mut PyTypeObject {
+    unsafe { get_state!().time_type }
+}
+
+#[inline(always)]
+pub(crate) fn get_uuid_type() -> *mut PyTypeObject {
+    unsafe { get_state!().uuid_type }
+}
+
+#[inline(always)]
+pub(crate) fn get_enum_type() -> *mut PyTypeObject {
+    unsafe { get_state!().enum_type }
+}
+
+#[inline(always)]
+pub(crate) fn get_field_type() -> *mut PyTypeObject {
+    unsafe { get_state!().field_type }
+}
+
+#[inline(always)]
+pub(crate) fn get_zoneinfo_type() -> *mut PyTypeObject {
+    unsafe { get_state!().zoneinfo_type }
+}
+
+#[inline(always)]
+pub(crate) fn get_float_type() -> *mut PyTypeObject {
+    unsafe { get_state!().float_type }
+}
+
+#[inline(always)]
+pub(crate) fn get_bytearray_type() -> *mut PyTypeObject {
+    unsafe { get_state!().bytearray_type }
+}
+
+#[inline(always)]
+pub(crate) fn get_memoryview_type() -> *mut PyTypeObject {
+    unsafe { get_state!().memoryview_type }
+}
+
+// String constant accessors
+#[inline(always)]
+pub(crate) fn get_utcoffset_method_str() -> *mut PyObject {
+    unsafe { get_state!().utcoffset_method_str }
+}
+
+#[inline(always)]
+pub(crate) fn get_normalize_method_str() -> *mut PyObject {
+    unsafe { get_state!().normalize_method_str }
+}
+
+#[inline(always)]
+pub(crate) fn get_convert_method_str() -> *mut PyObject {
+    unsafe { get_state!().convert_method_str }
+}
+
+#[inline(always)]
+pub(crate) fn get_dst_str() -> *mut PyObject {
+    unsafe { get_state!().dst_str }
+}
+
+#[inline(always)]
+pub(crate) fn get_dict_str() -> *mut PyObject {
+    unsafe { get_state!().dict_str }
+}
+
+#[inline(always)]
+pub(crate) fn get_dataclass_fields_str() -> *mut PyObject {
+    unsafe { get_state!().dataclass_fields_str }
+}
+
+#[inline(always)]
+pub(crate) fn get_slots_str() -> *mut PyObject {
+    unsafe { get_state!().slots_str }
+}
+
+#[inline(always)]
+pub(crate) fn get_field_type_str() -> *mut PyObject {
+    unsafe { get_state!().field_type_str }
+}
+
+#[inline(always)]
+pub(crate) fn get_array_struct_str() -> *mut PyObject {
+    unsafe { get_state!().array_struct_str }
+}
+
+#[inline(always)]
+pub(crate) fn get_dtype_str() -> *mut PyObject {
+    unsafe { get_state!().dtype_str }
+}
+
+#[inline(always)]
+pub(crate) fn get_descr_str() -> *mut PyObject {
+    unsafe { get_state!().descr_str }
 }
 
 #[cold]
@@ -111,12 +325,7 @@ fn _init_typerefs_impl() -> bool {
     unsafe {
         debug_assert!(crate::opt::MAX_OPT < i32::from(u16::MAX));
 
-        #[cfg(not(Py_GIL_DISABLED))]
-        assert!(
-            crate::deserialize::KEY_MAP
-                .set(crate::deserialize::KeyMap::default())
-                .is_ok()
-        );
+        // KEY_MAP is now per-interpreter, initialized in InterpreterState::new()
 
         crate::serialize::writer::set_str_formatter_fn();
         crate::str::set_str_create_fn();
@@ -168,7 +377,7 @@ fn _init_typerefs_impl() -> bool {
             look_up_type_object(c"json", c"JSONDecodeError").cast::<PyObject>();
         debug_assert!(!json_jsondecodeerror.is_null());
         JsonDecodeError = PyErr_NewException(
-            c"orjson.JSONDecodeError".as_ptr(),
+            c"hyperjson.JSONDecodeError".as_ptr(),
             json_jsondecodeerror,
             null_mut(),
         );

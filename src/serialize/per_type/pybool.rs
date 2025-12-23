@@ -20,6 +20,6 @@ impl Serialize for BoolSerializer {
     where
         S: Serializer,
     {
-        serializer.serialize_bool(unsafe { core::ptr::eq(self.ptr, crate::typeref::TRUE) })
+        serializer.serialize_bool(unsafe { core::ptr::eq(self.ptr, crate::typeref::get_true()) })
     }
 }

@@ -4,7 +4,7 @@
 #[cfg(target_endian = "little")]
 use crate::ffi::PyCompactUnicodeObject;
 use crate::ffi::{Py_HashBuffer, Py_ssize_t, PyASCIIObject, PyObject};
-use crate::typeref::{EMPTY_UNICODE, STR_TYPE};
+// EMPTY_UNICODE, STR_TYPE now accessed via typeref accessor functions
 #[cfg(target_endian = "little")]
 use crate::util::isize_to_usize;
 #[cfg(target_endian = "little")]
@@ -65,7 +65,7 @@ unsafe impl Sync for PyStr {}
 impl PyStr {
     pub unsafe fn from_ptr_unchecked(ptr: *mut PyObject) -> PyStr {
         debug_assert!(!ptr.is_null());
-        debug_assert!(is_class_by_type!(ob_type!(ptr), STR_TYPE));
+        debug_assert!(is_class_by_type!(ob_type!(ptr), crate::typeref::get_str_type()));
         PyStr { ptr: nonnull!(ptr) }
     }
 
@@ -80,7 +80,7 @@ impl PyStr {
     pub fn from_str(buf: &str) -> PyStr {
         if buf.is_empty() {
             return PyStr {
-                ptr: nonnull!(use_immortal!(EMPTY_UNICODE)),
+                ptr: nonnull!(use_immortal!(crate::typeref::get_empty_unicode())),
             };
         }
         #[cfg(not(feature = "avx512"))]
@@ -175,7 +175,7 @@ impl PyStrSubclass {
         let ob_type = ob_type!(ptr);
         let tp_flags = tp_flags!(ob_type);
         debug_assert!(!ptr.is_null());
-        debug_assert!(!is_class_by_type!(ob_type, STR_TYPE));
+        debug_assert!(!is_class_by_type!(ob_type, crate::typeref::get_str_type()));
         debug_assert!(is_subclass_by_flag!(tp_flags, Py_TPFLAGS_UNICODE_SUBCLASS));
         PyStrSubclass { ptr: nonnull!(ptr) }
     }

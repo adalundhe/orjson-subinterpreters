@@ -1,40 +1,16 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 // Copyright ijl (2025)
 
-use crate::ffi::{PyMem_Free, PyMem_Malloc, PyMem_Realloc};
-use core::alloc::{GlobalAlloc, Layout};
-use core::ffi::c_void;
-
-struct PyMemAllocator {}
-
-#[global_allocator]
-static ALLOCATOR: PyMemAllocator = PyMemAllocator {};
-
-unsafe impl Sync for PyMemAllocator {}
-
-unsafe impl GlobalAlloc for PyMemAllocator {
-    #[inline]
-    unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
-        unsafe { PyMem_Malloc(layout.size()).cast::<u8>() }
-    }
-
-    #[inline]
-    unsafe fn dealloc(&self, ptr: *mut u8, _layout: Layout) {
-        unsafe { PyMem_Free(ptr.cast::<c_void>()) }
-    }
-
-    #[inline]
-    unsafe fn alloc_zeroed(&self, layout: Layout) -> *mut u8 {
-        unsafe {
-            let len = layout.size();
-            let ptr = PyMem_Malloc(len).cast::<u8>();
-            core::ptr::write_bytes(ptr, 0, len);
-            ptr
-        }
-    }
-
-    #[inline]
-    unsafe fn realloc(&self, ptr: *mut u8, _layout: Layout, new_size: usize) -> *mut u8 {
-        unsafe { PyMem_Realloc(ptr.cast::<c_void>(), new_size).cast::<u8>() }
-    }
-}
+// NOTE: The global allocator using PyMem_* has been removed for subinterpreter compatibility.
+// PyMem_* functions are interpreter-specific, and using them from a global allocator would
+// cause memory to be allocated in the wrong interpreter's heap, leading to crashes or
+// undefined behavior in subinterpreter environments.
+//
+// The standard Rust allocator is now used instead. This is safe because:
+// 1. Rust's standard allocator is not interpreter-specific
+// 2. Memory allocated by Rust can be safely used across interpreters
+// 3. Python objects are still managed through PyObject APIs which are called with
+//    the correct interpreter context
+//
+// If PyMem_* allocation is needed in the future, it should be done explicitly
+// with interpreter context, not through a global allocator.

@@ -3,7 +3,7 @@
 
 use crate::deserialize::DeserializeError;
 use crate::deserialize::utf8::read_input_to_buf;
-use crate::typeref::EMPTY_UNICODE;
+// EMPTY_UNICODE now accessed via typeref::get_empty_unicode()
 use core::ptr::NonNull;
 
 pub(crate) fn deserialize(
@@ -20,7 +20,7 @@ pub(crate) fn deserialize(
         } else if buffer == b"{}" {
             return Ok(nonnull!(ffi!(PyDict_New())));
         } else if buffer == b"\"\"" {
-            unsafe { return Ok(nonnull!(use_immortal!(EMPTY_UNICODE))) }
+            unsafe { return Ok(nonnull!(use_immortal!(crate::typeref::get_empty_unicode()))) }
         }
     }
 

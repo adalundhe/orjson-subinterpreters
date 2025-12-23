@@ -6,7 +6,7 @@ from uuid import uuid4
 
 from flask import Flask
 
-import orjson
+import hyperjson
 
 app = Flask(__name__)
 
@@ -18,11 +18,11 @@ def root():
     data = {
         "uuid": uuid4(),
         "updated_at": NOW,
-        "data": [1, 2.2, None, True, False, orjson.Fragment(b"{}")],
+        "data": [1, 2.2, None, True, False, hyperjson.Fragment(b"{}")],
     }
-    payload = orjson.dumps(
+    payload = hyperjson.dumps(
         data,
-        option=orjson.OPT_NAIVE_UTC | orjson.OPT_OMIT_MICROSECONDS,
+        option=hyperjson.OPT_NAIVE_UTC | hyperjson.OPT_OMIT_MICROSECONDS,
     )
     return app.response_class(
         response=payload,

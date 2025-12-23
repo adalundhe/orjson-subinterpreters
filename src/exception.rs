@@ -9,7 +9,7 @@ use crate::ffi::{
     Py_DECREF, PyErr_SetObject, PyLong_FromLongLong, PyObject, PyTuple_New,
     PyUnicode_FromStringAndSize,
 };
-use crate::typeref::{EMPTY_UNICODE, JsonDecodeError, JsonEncodeError};
+// EMPTY_UNICODE, JsonDecodeError, JsonEncodeError now accessed via typeref accessor functions
 use crate::util::usize_to_isize;
 
 #[cold]
@@ -25,7 +25,7 @@ pub(crate) fn raise_loads_exception(err: DeserializeError) -> *mut PyObject {
                 usize_to_isize(as_str.len()),
             ),
             None => {
-                use_immortal!(EMPTY_UNICODE)
+                use_immortal!(crate::typeref::get_empty_unicode())
             }
         };
         let err_msg =
@@ -35,7 +35,7 @@ pub(crate) fn raise_loads_exception(err: DeserializeError) -> *mut PyObject {
         crate::ffi::PyTuple_SET_ITEM(args, 0, err_msg);
         crate::ffi::PyTuple_SET_ITEM(args, 1, doc);
         crate::ffi::PyTuple_SET_ITEM(args, 2, pos);
-        PyErr_SetObject(JsonDecodeError, args);
+        PyErr_SetObject(crate::typeref::get_json_decode_error(), args);
         Py_DECREF(args);
     }
     null_mut()
@@ -48,7 +48,7 @@ pub(crate) fn raise_dumps_exception_fixed(msg: &str) -> *mut PyObject {
     unsafe {
         let err_msg =
             PyUnicode_FromStringAndSize(msg.as_ptr().cast::<c_char>(), usize_to_isize(msg.len()));
-        PyErr_SetObject(JsonEncodeError, err_msg);
+        PyErr_SetObject(crate::typeref::get_json_encode_error(), err_msg);
         debug_assert!(ffi!(Py_REFCNT(err_msg)) <= 2);
         Py_DECREF(err_msg);
     }
@@ -65,7 +65,7 @@ pub(crate) fn raise_dumps_exception_dynamic(err: &str) -> *mut PyObject {
 
         let err_msg =
             PyUnicode_FromStringAndSize(err.as_ptr().cast::<c_char>(), usize_to_isize(err.len()));
-        PyErr_SetObject(JsonEncodeError, err_msg);
+        PyErr_SetObject(crate::typeref::get_json_encode_error(), err_msg);
         debug_assert!(ffi!(Py_REFCNT(err_msg)) <= 2);
         Py_DECREF(err_msg);
 
@@ -91,7 +91,7 @@ pub(crate) fn raise_dumps_exception_dynamic(err: &str) -> *mut PyObject {
 
         let err_msg =
             PyUnicode_FromStringAndSize(err.as_ptr().cast::<c_char>(), usize_to_isize(err.len()));
-        PyErr_SetObject(JsonEncodeError, err_msg);
+        PyErr_SetObject(crate::typeref::get_json_encode_error(), err_msg);
         debug_assert!(ffi!(Py_REFCNT(err_msg)) == 2);
         Py_DECREF(err_msg);
         let mut tp: *mut PyObject = null_mut();

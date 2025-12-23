@@ -5,11 +5,11 @@
 import multiprocessing.pool
 import sys
 
-import orjson
+import hyperjson
 
 NUM_PROC = 16
 
-TEST_MESSAGE = "parallel import of orjson running..."
+TEST_MESSAGE = "parallel import of hyperjson running..."
 
 
 class Custom:
@@ -21,8 +21,8 @@ def default(_):
 
 
 def func(_):
-    orjson.dumps(Custom(), option=orjson.OPT_SERIALIZE_NUMPY, default=default)
-    orjson.loads(b'{"a":1,"b":2,"c":3}')
+    hyperjson.dumps(Custom(), option=hyperjson.OPT_SERIALIZE_NUMPY, default=default)
+    hyperjson.loads(b'{"a":1,"b":2,"c":3}')
 
 
 def main():

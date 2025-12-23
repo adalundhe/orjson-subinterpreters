@@ -10,7 +10,7 @@ use crate::serialize::per_type::{
 };
 use crate::serialize::serializer::PyObjectSerializer;
 use crate::serialize::state::SerializerState;
-use crate::typeref::{LIST_TYPE, TUPLE_TYPE};
+// LIST_TYPE, TUPLE_TYPE now accessed via typeref accessor functions
 use crate::util::isize_to_usize;
 
 use core::ptr::NonNull;
@@ -48,7 +48,7 @@ impl ListTupleSerializer {
         default: Option<NonNull<crate::ffi::PyObject>>,
     ) -> Self {
         debug_assert!(
-            is_type!(ob_type!(ptr), LIST_TYPE)
+            is_type!(ob_type!(ptr), crate::typeref::get_list_type())
                 || is_subclass_by_flag!(tp_flags!(ob_type!(ptr)), Py_TPFLAGS_LIST_SUBCLASS)
         );
         let data_ptr = unsafe { (*ptr.cast::<crate::ffi::PyListObject>()).ob_item };
@@ -67,7 +67,7 @@ impl ListTupleSerializer {
         default: Option<NonNull<crate::ffi::PyObject>>,
     ) -> Self {
         debug_assert!(
-            is_type!(ob_type!(ptr), TUPLE_TYPE)
+            is_type!(ob_type!(ptr), crate::typeref::get_tuple_type())
                 || is_subclass_by_flag!(tp_flags!(ob_type!(ptr)), Py_TPFLAGS_TUPLE_SUBCLASS)
         );
         let data_ptr = unsafe { (*ptr.cast::<crate::ffi::PyTupleObject>()).ob_item.as_ptr() };

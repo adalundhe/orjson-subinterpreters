@@ -6,9 +6,7 @@ use crate::serialize::per_type::dict::ZeroDictSerializer;
 use crate::serialize::serializer::PyObjectSerializer;
 use crate::serialize::state::SerializerState;
 use crate::str::PyStr;
-use crate::typeref::{
-    DATACLASS_FIELDS_STR, DICT_STR, FIELD_TYPE, FIELD_TYPE_STR, SLOTS_STR, STR_TYPE,
-};
+// DATACLASS_FIELDS_STR, DICT_STR, FIELD_TYPE, FIELD_TYPE_STR, SLOTS_STR, STR_TYPE now accessed via typeref accessor functions
 use crate::util::isize_to_usize;
 
 use serde::ser::{Serialize, SerializeMap, Serializer};
@@ -35,7 +33,7 @@ impl Serialize for DataclassGenericSerializer<'_> {
         if self.previous.state.recursion_limit() {
             err!(SerializeError::RecursionLimit)
         }
-        let dict = ffi!(PyObject_GetAttr(self.previous.ptr, DICT_STR));
+        let dict = ffi!(PyObject_GetAttr(self.previous.ptr, crate::typeref::get_dict_str()));
         let ob_type = ob_type!(self.previous.ptr);
         if dict.is_null() {
             cold_path!();
@@ -46,7 +44,7 @@ impl Serialize for DataclassGenericSerializer<'_> {
                 self.previous.default,
             )
             .serialize(serializer)
-        } else if pydict_contains!(ob_type, SLOTS_STR) {
+        } else if pydict_contains!(ob_type, crate::typeref::get_slots_str()) {
             let ret = DataclassFallbackSerializer::new(
                 self.previous.ptr,
                 self.previous.state,
@@ -112,7 +110,7 @@ impl Serialize for DataclassFastSerializer {
 
             let key_as_str = {
                 let key_ob_type = ob_type!(key);
-                if !is_class_by_type!(key_ob_type, STR_TYPE) {
+                if !is_class_by_type!(key_ob_type, crate::typeref::get_str_type()) {
                     cold_path!();
                     err!(SerializeError::KeyMustBeStr)
                 }
@@ -160,7 +158,7 @@ impl Serialize for DataclassFallbackSerializer {
     where
         S: Serializer,
     {
-        let fields = ffi!(PyObject_GetAttr(self.ptr, DATACLASS_FIELDS_STR));
+        let fields = ffi!(PyObject_GetAttr(self.ptr, crate::typeref::get_dataclass_fields_str()));
         debug_assert!(ffi!(Py_REFCNT(fields)) >= 2);
         ffi!(Py_DECREF(fields));
         let len = isize_to_usize(ffi!(Py_SIZE(fields)));
@@ -182,10 +180,10 @@ impl Serialize for DataclassFallbackSerializer {
 
             pydict_next!(fields, &mut pos, &mut next_key, &mut next_value);
 
-            let field_type = ffi!(PyObject_GetAttr(field, FIELD_TYPE_STR));
+            let field_type = ffi!(PyObject_GetAttr(field, crate::typeref::get_field_type_str()));
             debug_assert!(ffi!(Py_REFCNT(field_type)) >= 2);
             ffi!(Py_DECREF(field_type));
-            if unsafe { !core::ptr::eq(field_type.cast::<crate::ffi::PyTypeObject>(), FIELD_TYPE) }
+            if unsafe { !core::ptr::eq(field_type.cast::<crate::ffi::PyTypeObject>(), crate::typeref::get_field_type()) }
             {
                 continue;
             }

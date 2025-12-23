@@ -15,7 +15,7 @@ use crate::serialize::per_type::{
 use crate::serialize::serializer::PyObjectSerializer;
 use crate::serialize::state::SerializerState;
 use crate::str::{PyStr, PyStrSubclass};
-use crate::typeref::{STR_TYPE, TRUE, VALUE_STR};
+// STR_TYPE, TRUE, VALUE_STR now accessed via typeref accessor functions
 use crate::util::isize_to_usize;
 use core::ptr::NonNull;
 use serde::ser::{Serialize, SerializeMap, Serializer};
@@ -238,7 +238,7 @@ impl Serialize for Dict {
 
             // key
             let key_ob_type = ob_type!(key);
-            if !is_class_by_type!(key_ob_type, STR_TYPE) {
+            if !is_class_by_type!(key_ob_type, crate::typeref::get_str_type()) {
                 err!(SerializeError::KeyMustBeStr)
             }
             let pystr = unsafe { PyStr::from_ptr_unchecked(key) };
@@ -286,7 +286,7 @@ impl Serialize for DictSortedKey {
 
             pydict_next!(self.ptr, &mut pos, &mut next_key, &mut next_value);
 
-            if unsafe { !core::ptr::eq(ob_type!(key), STR_TYPE) } {
+            if unsafe { !core::ptr::eq(ob_type!(key), crate::typeref::get_str_type()) } {
                 err!(SerializeError::KeyMustBeStr)
             }
             let pystr = unsafe { PyStr::from_ptr_unchecked(key) };
@@ -428,7 +428,7 @@ impl DictNonStrKey {
         match pyobject_to_obtype(key, opts) {
             ObType::None => Ok(String::from("null")),
             ObType::Bool => {
-                if unsafe { core::ptr::eq(key, TRUE) } {
+                if unsafe { core::ptr::eq(key, crate::typeref::get_true()) } {
                     Ok(String::from("true"))
                 } else {
                     Ok(String::from("false"))
@@ -441,7 +441,7 @@ impl DictNonStrKey {
             ObType::Time => non_str_time(key, opts),
             ObType::Uuid => non_str_uuid(key),
             ObType::Enum => {
-                let value = ffi!(PyObject_GetAttr(key, VALUE_STR));
+                let value = ffi!(PyObject_GetAttr(key, crate::typeref::get_value_str()));
                 debug_assert!(ffi!(Py_REFCNT(value)) >= 2);
                 let ret = Self::pyobject_to_string(value, opts);
                 ffi!(Py_DECREF(value));
@@ -487,7 +487,7 @@ impl Serialize for DictNonStrKey {
 
             pydict_next!(self.ptr, &mut pos, &mut next_key, &mut next_value);
 
-            if is_type!(ob_type!(key), STR_TYPE) {
+            if is_type!(ob_type!(key), crate::typeref::get_str_type()) {
                 match unsafe { PyStr::from_ptr_unchecked(key).to_str() } {
                     Some(uni) => {
                         items.push((String::from(uni), value));

@@ -4,7 +4,7 @@
 use crate::ffi::{Fragment, PyBytes_AS_STRING, PyBytes_GET_SIZE};
 use crate::serialize::error::SerializeError;
 use crate::str::PyStr;
-use crate::typeref::{BYTES_TYPE, STR_TYPE};
+// BYTES_TYPE, STR_TYPE now accessed via typeref accessor functions
 use crate::util::isize_to_usize;
 
 use serde::ser::{Serialize, Serializer};
@@ -32,12 +32,12 @@ impl Serialize for FragmentSerializer {
         unsafe {
             let fragment: *mut Fragment = self.ptr.cast::<Fragment>();
             let ob_type = ob_type!((*fragment).contents);
-            if core::ptr::eq(ob_type, BYTES_TYPE) {
+            if core::ptr::eq(ob_type, crate::typeref::get_bytes_type()) {
                 buffer = core::slice::from_raw_parts(
                     PyBytes_AS_STRING((*fragment).contents).cast::<u8>(),
                     isize_to_usize(PyBytes_GET_SIZE((*fragment).contents)),
                 );
-            } else if core::ptr::eq(ob_type, STR_TYPE) {
+            } else if core::ptr::eq(ob_type, crate::typeref::get_str_type()) {
                 match unsafe { PyStr::from_ptr_unchecked((*fragment).contents).to_str() } {
                     Some(uni) => buffer = uni.as_bytes(),
                     None => err!(SerializeError::InvalidStr),

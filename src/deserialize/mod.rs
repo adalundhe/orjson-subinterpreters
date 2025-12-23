@@ -3,7 +3,7 @@
 
 mod backend;
 #[cfg(not(Py_GIL_DISABLED))]
-mod cache;
+pub(crate) mod cache;
 mod deserializer;
 mod error;
 mod pyobject;

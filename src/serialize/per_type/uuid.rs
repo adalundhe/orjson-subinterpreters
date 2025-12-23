@@ -2,7 +2,7 @@
 // Copyright ijl (2018-2025)
 
 use crate::serialize::buffer::SmallFixedBuffer;
-use crate::typeref::INT_ATTR_STR;
+// INT_ATTR_STR now accessed via typeref::get_int_attr_str()
 use core::ffi::c_uchar;
 use serde::ser::{Serialize, Serializer};
 
@@ -24,7 +24,7 @@ impl UUID {
         let value: u128;
         {
             // test_uuid_immutable, test_uuid_int
-            let py_int = ffi!(PyObject_GetAttr(self.ptr, INT_ATTR_STR));
+            let py_int = ffi!(PyObject_GetAttr(self.ptr, crate::typeref::get_int_attr_str()));
             ffi!(Py_DECREF(py_int));
             let mut buffer: [c_uchar; 16] = [0; 16];
             unsafe {

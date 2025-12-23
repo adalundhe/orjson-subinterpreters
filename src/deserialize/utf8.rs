@@ -4,7 +4,7 @@
 use crate::deserialize::DeserializeError;
 use crate::ffi::{PyBytes_AS_STRING, PyBytes_GET_SIZE, PyMemoryView_GET_BUFFER};
 use crate::str::PyStr;
-use crate::typeref::{BYTEARRAY_TYPE, BYTES_TYPE, MEMORYVIEW_TYPE, STR_TYPE};
+// BYTEARRAY_TYPE, BYTES_TYPE, MEMORYVIEW_TYPE, STR_TYPE now accessed via typeref accessor functions
 use crate::util::INVALID_STR;
 use crate::util::isize_to_usize;
 use core::ffi::c_char;
@@ -39,7 +39,7 @@ pub(crate) fn read_input_to_buf(
 ) -> Result<&'static [u8], DeserializeError<'static>> {
     let obj_type_ptr = ob_type!(ptr);
     let buffer: &[u8];
-    if is_type!(obj_type_ptr, BYTES_TYPE) {
+    if is_type!(obj_type_ptr, crate::typeref::get_bytes_type()) {
         buffer = unsafe {
             core::slice::from_raw_parts(
                 PyBytes_AS_STRING(ptr).cast::<u8>(),
@@ -49,7 +49,7 @@ pub(crate) fn read_input_to_buf(
         if !is_valid_utf8(buffer) {
             return Err(DeserializeError::invalid(Cow::Borrowed(INVALID_STR)));
         }
-    } else if is_type!(obj_type_ptr, STR_TYPE) {
+    } else if is_type!(obj_type_ptr, crate::typeref::get_str_type()) {
         let pystr = unsafe { PyStr::from_ptr_unchecked(ptr) };
         let uni = pystr.to_str();
         if uni.is_none() {
@@ -57,7 +57,7 @@ pub(crate) fn read_input_to_buf(
         }
         let as_str = uni.unwrap();
         buffer = unsafe { core::slice::from_raw_parts(as_str.as_ptr(), as_str.len()) };
-    } else if is_type!(obj_type_ptr, MEMORYVIEW_TYPE) {
+    } else if is_type!(obj_type_ptr, crate::typeref::get_memoryview_type()) {
         cold_path!();
         let membuf = unsafe { PyMemoryView_GET_BUFFER(ptr) };
         if unsafe { crate::ffi::PyBuffer_IsContiguous(membuf, b'C' as c_char) == 0 } {
@@ -74,7 +74,7 @@ pub(crate) fn read_input_to_buf(
         if !is_valid_utf8(buffer) {
             return Err(DeserializeError::invalid(Cow::Borrowed(INVALID_STR)));
         }
-    } else if is_type!(obj_type_ptr, BYTEARRAY_TYPE) {
+    } else if is_type!(obj_type_ptr, crate::typeref::get_bytearray_type()) {
         cold_path!();
         buffer = unsafe {
             core::slice::from_raw_parts(

@@ -2,7 +2,7 @@
 // Copyright ijl (2018-2025)
 
 use crate::serialize::serializer::PyObjectSerializer;
-use crate::typeref::VALUE_STR;
+// VALUE_STR now accessed via typeref::get_value_str()
 use serde::ser::{Serialize, Serializer};
 
 #[repr(transparent)]
@@ -22,7 +22,7 @@ impl Serialize for EnumSerializer<'_> {
     where
         S: Serializer,
     {
-        let value = ffi!(PyObject_GetAttr(self.previous.ptr, VALUE_STR));
+        let value = ffi!(PyObject_GetAttr(self.previous.ptr, crate::typeref::get_value_str()));
         debug_assert!(ffi!(Py_REFCNT(value)) >= 2);
         let ret = PyObjectSerializer::new(value, self.previous.state, self.previous.default)
             .serialize(serializer);

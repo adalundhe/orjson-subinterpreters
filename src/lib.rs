@@ -79,6 +79,7 @@ mod alloc;
 mod deserialize;
 mod exception;
 mod ffi;
+mod interpreter_state;
 mod opt;
 mod serialize;
 mod str;
@@ -138,7 +139,8 @@ macro_rules! opt {
 #[cfg_attr(feature = "optimize", optimize(size))]
 pub(crate) unsafe extern "C" fn orjson_init_exec(mptr: *mut PyObject) -> c_int {
     unsafe {
-        typeref::init_typerefs();
+        // Initialize per-interpreter state
+        interpreter_state::get_or_init_state(mptr);
 
         {
             let version = env!("CARGO_PKG_VERSION");
@@ -167,7 +169,7 @@ pub(crate) unsafe extern "C" fn orjson_init_exec(mptr: *mut PyObject) -> c_int {
             let func = PyCFunction_NewEx(
                 Box::into_raw(wrapped_dumps),
                 null_mut(),
-                PyUnicode_InternFromString(c"orjson".as_ptr()),
+                PyUnicode_InternFromString(c"hyperjson".as_ptr()),
             );
             add!(mptr, c"dumps", func);
         }
@@ -184,12 +186,12 @@ pub(crate) unsafe extern "C" fn orjson_init_exec(mptr: *mut PyObject) -> c_int {
             let func = PyCFunction_NewEx(
                 Box::into_raw(wrapped_loads),
                 null_mut(),
-                PyUnicode_InternFromString(c"orjson".as_ptr()),
+                PyUnicode_InternFromString(c"hyperjson".as_ptr()),
             );
             add!(mptr, c"loads", func);
         }
 
-        add!(mptr, c"Fragment", typeref::FRAGMENT_TYPE.cast::<PyObject>());
+        add!(mptr, c"Fragment", typeref::get_fragment_type().cast::<PyObject>());
 
         opt!(mptr, c"OPT_APPEND_NEWLINE", opt::APPEND_NEWLINE);
         opt!(mptr, c"OPT_INDENT_2", opt::INDENT_2);
@@ -210,8 +212,8 @@ pub(crate) unsafe extern "C" fn orjson_init_exec(mptr: *mut PyObject) -> c_int {
         opt!(mptr, c"OPT_STRICT_INTEGER", opt::STRICT_INTEGER);
         opt!(mptr, c"OPT_UTC_Z", opt::UTC_Z);
 
-        add!(mptr, c"JSONDecodeError", typeref::JsonDecodeError);
-        add!(mptr, c"JSONEncodeError", typeref::JsonEncodeError);
+        add!(mptr, c"JSONDecodeError", typeref::get_json_decode_error());
+        add!(mptr, c"JSONEncodeError", typeref::get_json_encode_error());
 
         0
     }
@@ -238,7 +240,7 @@ pub(crate) unsafe extern "C" fn PyInit_orjson() -> *mut PyModuleDef {
             #[cfg(Py_3_12)]
             PyModuleDef_Slot {
                 slot: crate::ffi::Py_mod_multiple_interpreters,
-                value: crate::ffi::Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED,
+                value: null_mut(), // Py_MOD_MULTIPLE_INTERPRETERS_SUPPORTED (0 as pointer)
             },
             #[cfg(Py_3_13)]
             PyModuleDef_Slot {
@@ -253,7 +255,7 @@ pub(crate) unsafe extern "C" fn PyInit_orjson() -> *mut PyModuleDef {
 
         let init = Box::new(PyModuleDef {
             m_base: PyModuleDef_HEAD_INIT,
-            m_name: c"orjson".as_ptr(),
+            m_name: c"hyperjson".as_ptr(),
             m_doc: null(),
             m_size: 0,
             m_methods: null_mut(),
@@ -315,7 +317,7 @@ pub(crate) unsafe extern "C" fn dumps(
             cold_path!();
             for i in 0..=Py_SIZE(kwnames).saturating_sub(1) {
                 let arg = crate::ffi::PyTuple_GET_ITEM(kwnames, i as Py_ssize_t);
-                if matches_kwarg!(arg, typeref::OPTION) {
+                if matches_kwarg!(arg, typeref::get_option()) {
                     if num_args & 3 == 3 {
                         cold_path!();
                         return raise_dumps_exception_fixed(
@@ -323,7 +325,7 @@ pub(crate) unsafe extern "C" fn dumps(
                         );
                     }
                     optsptr = Some(NonNull::new_unchecked(*args.offset(num_args + i)));
-                } else if matches_kwarg!(arg, typeref::DEFAULT) {
+                } else if matches_kwarg!(arg, typeref::get_default()) {
                     if num_args & 2 == 2 {
                         cold_path!();
                         return raise_dumps_exception_fixed(
@@ -342,7 +344,7 @@ pub(crate) unsafe extern "C" fn dumps(
         let mut optsbits: i32 = 0;
         if let Some(opts) = optsptr {
             cold_path!();
-            if core::ptr::eq((*opts.as_ptr()).ob_type, typeref::INT_TYPE) {
+            if core::ptr::eq((*opts.as_ptr()).ob_type, typeref::get_int_type()) {
                 #[allow(clippy::cast_possible_truncation)]
                 let tmp = PyLong_AsLong(optsptr.unwrap().as_ptr()) as i32; // stmt_expr_attributes
                 optsbits = tmp;
@@ -350,7 +352,7 @@ pub(crate) unsafe extern "C" fn dumps(
                     cold_path!();
                     return raise_dumps_exception_fixed("Invalid opts");
                 }
-            } else if !core::ptr::eq(opts.as_ptr(), typeref::NONE) {
+            } else if !core::ptr::eq(opts.as_ptr(), typeref::get_none()) {
                 cold_path!();
                 return raise_dumps_exception_fixed("Invalid opts");
             }
